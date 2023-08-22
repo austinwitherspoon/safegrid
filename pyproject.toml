@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "safegrid"
+version = "0.1.0"
+description = "A pydantic powered, type hinted ORM for shotgrid"
+authors = ["Austin Witherspoon <contact@austinwitherspoon.com>"]
+license = "GNU GPLv3"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.7"
+pydantic = "^2.2.1"
+typing-extensions = "^4.7.1"
+shotgun-api3 = "^3.3.5"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

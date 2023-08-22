@@ -8,9 +8,9 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.7"
-pydantic = "^2.2.1"
-typing-extensions = "^4.7.1"
-shotgun-api3 = "^3.3.5"
+pydantic = "^2"
+typing-extensions = "^4"
+shotgun-api3 = "^3"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.0"

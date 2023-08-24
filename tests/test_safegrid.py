@@ -1,10 +1,14 @@
-import io
-import contextlib
 import safegrid
+from shotgun_api3.lib import mockgun
 
 
-def test_hello_world():
-    with io.StringIO() as buf, contextlib.redirect_stdout(buf):
-        safegrid.hello_world()
-        output = buf.getvalue()
-    assert output == "Hello World!\n"
+class Version(safegrid.Entity):
+    type = "Version"
+    sg_path_to_frames: dict
+    code: str
+    description: str
+
+
+def test_find(sg: mockgun.Shotgun):
+    shots = sg.find("Shot", [], ["code", "created_at"])
+    assert len(shots) > 0

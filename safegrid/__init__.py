@@ -1,2 +1,3 @@
-def hello_world():
-    print("Hello World!")
+"""Safegrid - A pydantic powered ORM for Autodesk Shotgrid."""
+
+from .entity import Entity

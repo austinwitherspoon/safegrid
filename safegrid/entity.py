@@ -1,6 +1,5 @@
+from hmac import new
 import inspect
-import sys
-import types
 from copy import deepcopy
 from typing import (
     Any,
@@ -14,20 +13,16 @@ from typing import (
     Type,
     Union,
 )
-import typing
 
 import pydantic
 import shotgun_api3
 import shotgun_api3.lib.mockgun
-from typing_extensions import ClassVar, Literal, Self, get_args, get_origin
+from typing_extensions import ClassVar, Literal, Self
 
-
-class GenericEntity(pydantic.BaseModel, extra="allow"):
-    id: int
-    type: str
-
-
-from .fields import Filter, FilterGroup, ShotgunType, UnknownFieldType  # noqa: E402
+from ._types import get_all_valid_types, remove_shotgun_types
+from .exceptions import SafegridException
+from .fields import ShotgunType, UnknownFieldType
+from .filters import Filter, FilterGroup
 
 # Type hint for shotgun instance
 Shotgun = Union[shotgun_api3.Shotgun, shotgun_api3.lib.mockgun.Shotgun]
@@ -37,78 +32,6 @@ Shotgun_or_builder = Union[Shotgun, Callable[[], Shotgun]]
 
 # Default shotgun to use if none provided
 DEFAULT_SHOTGUN: Optional[Shotgun_or_builder] = None
-
-
-class SafegridException(Exception):
-    pass
-
-
-def swap_annotations(type_hint: Type) -> Tuple[Type, Optional[Type[ShotgunType]]]:
-    """Takes a type hint and attempts to see if there's a nested ShotgunType annotation.
-    If so, swap it with it's inner _output_type, and return the both fields
-    """
-    origin = get_origin(type_hint)
-    if origin == ClassVar:
-        return type_hint, None
-    if inspect.isclass(type_hint) and issubclass(type_hint, ShotgunType):
-        return type_hint._output_type, type_hint
-    if origin and inspect.isclass(origin) and issubclass(origin, ShotgunType):
-        return get_args(type_hint)[0], origin
-
-    # check if is a type with nested types
-    if hasattr(type_hint, "__args__"):
-        new_args = []
-        sg_field = None
-        for arg in get_args(type_hint):
-            fixed_arg, _found_sg_field = swap_annotations(arg)
-            new_args.append(fixed_arg)
-            if _found_sg_field:
-                if sg_field is None:
-                    sg_field = _found_sg_field
-                else:
-                    raise SafegridException("Multiple ShotgunType annotations found")
-        if sg_field is not None:
-            if origin:
-                try:
-                    new_type = origin[tuple(new_args)]  # type:ignore
-                except TypeError:
-                    if sys.version_info >= (3, 9):
-                        if origin in [types.UnionType]:
-                            new_type = Union[tuple(new_args)]  # type:ignore
-                        else:
-                            raise
-                    else:
-                        if origin in [typing.Union]:
-                            new_type = Union[tuple(new_args)]
-                        else:
-                            raise
-                return new_type, sg_field
-            else:
-                raise SafegridException(
-                    "Unknown origin - Something went wrong processing type hints!"
-                )
-    return type_hint, None
-
-
-def get_all_valid_types(type_hint: Type) -> Tuple[Type]:
-    """Processes all nested types and returns a list of all
-    possible variations of direct object types.
-    For example, `Union[str, Optional[Union[List[str],List[int]]]]`
-    would return `(str, None, List[str], List[int])`
-    """
-    origin = get_origin(type_hint)
-    if origin == ClassVar:
-        return (type_hint,)
-    if origin and inspect.isclass(origin) and issubclass(origin, ShotgunType):
-        return get_args(type_hint)
-    if inspect.isclass(type_hint) and issubclass(type_hint, ShotgunType):
-        return (type_hint._output_type,)
-    if get_args(type_hint):
-        new_args = []
-        for arg in get_args(type_hint):
-            new_args.extend(get_all_valid_types(arg))
-        return tuple(new_args)
-    return (type_hint,)
 
 
 class EntityMeta(type(pydantic.BaseModel)):
@@ -126,7 +49,7 @@ class EntityMeta(type(pydantic.BaseModel)):
                 _sg_fields.update(getattr(base, "_sg_fields"))
         annotations = namespace.get("__annotations__", {})
         for name, field_type in annotations.items():
-            fixed_annotation, sg_field = swap_annotations(field_type)
+            fixed_annotation, sg_field = remove_shotgun_types(field_type)
             annotations[name] = fixed_annotation
             if sg_field:
                 _sg_fields[name] = sg_field(name, None)  # type:ignore
@@ -274,14 +197,24 @@ class BaseEntity(
         sg: Optional[Shotgun],
     ):
         _nested_model_fields = cls._nested_model_fields()
+        models_to_fetch: Set[Type["BaseEntity"]] = set()
+        [models_to_fetch.update(v) for v in _nested_model_fields.values()]
 
         # if there are no nested fields, we can skip the rest of this
         if not _nested_model_fields:
             return models
 
+        for model_type in models_to_fetch:
+            if model_type not in _cache:
+                _cache[model_type] = {}
+
         # collect all the ids we need to fetch and construct empty models
-        ids_to_fetch: Dict[Type["BaseEntity"], Set[int]] = {}
-        new_models: Dict[Type["BaseEntity"], Dict[int, "BaseEntity"]] = {}
+        ids_to_fetch: Dict[Type["BaseEntity"], Set[int]] = {
+            m: set() for m in models_to_fetch
+        }
+        new_models: Dict[Type["BaseEntity"], Dict[int, "BaseEntity"]] = {
+            m: {} for m in models_to_fetch
+        }
 
         for model in models:
             for field_name, nested_types in _nested_model_fields.items():
@@ -301,24 +234,30 @@ class BaseEntity(
                         ),
                         None,
                     )
+
                     if matching_model_type is None:
                         continue
-                    cached_model = _cache.get(matching_model_type, {}).get(item["id"])
+
+                    cached_model = _cache[matching_model_type].get(item["id"])
                     if cached_model:
                         if is_list:
                             model[field_name][i] = cached_model
                         else:
                             model[field_name] = cached_model
                         continue
-                    if matching_model_type not in ids_to_fetch:
-                        ids_to_fetch[matching_model_type] = set()
-                    ids_to_fetch[matching_model_type].add(item["id"])
-                    empty_model = matching_model_type.model_construct(
-                        set(matching_model_type.model_fields.keys()), **item
-                    )
-                    if matching_model_type not in new_models:
-                        new_models[matching_model_type] = {}
-                    new_models[matching_model_type][item["id"]] = empty_model
+
+                    already_fetching = new_models[matching_model_type].get(item["id"])
+
+                    if already_fetching:
+                        empty_model = already_fetching
+                    else:
+                        ids_to_fetch[matching_model_type].add(item["id"])
+
+                        empty_model = matching_model_type.model_construct(
+                            set(matching_model_type.model_fields.keys()), **item
+                        )
+                        new_models[matching_model_type][item["id"]] = empty_model
+
                     if is_list:
                         model[field_name][i] = empty_model
                     else:
@@ -326,13 +265,14 @@ class BaseEntity(
 
         # fetch all the data
         for model_type, ids in ids_to_fetch.items():
+            if not ids:
+                continue
             results = model_type.find(
                 filters=[["id", "in", list(ids)]],
                 sg=sg,
                 _cache=_cache,
             )
-            if model_type not in _cache:
-                _cache[model_type] = {}
+            assert len(results) == len(ids)
             for result in results:
                 matching_model = new_models[model_type][result.id]  # type:ignore
                 matching_model.__dict__.update(result.__dict__)

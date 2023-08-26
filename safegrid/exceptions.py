@@ -1,0 +1,2 @@
+class SafegridException(Exception):
+    pass

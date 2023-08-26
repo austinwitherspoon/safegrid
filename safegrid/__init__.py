@@ -1,13 +1,17 @@
 """Safegrid - A pydantic powered ORM for Autodesk Shotgrid."""
 
-from .entity import BaseEntity, GenericEntity, set_default_shotgun, SafegridException
-from . import fields
+from .exceptions import SafegridException
+from ._types import GenericEntity
+from .entity import BaseEntity, set_default_shotgun
+from . import fields, filters
 
 
 __all__ = [
     "BaseEntity",
     "GenericEntity",
     "set_default_shotgun",
-    "SafegridException",
+    "exceptions",
     "fields",
+    "filters",
+    "SafeGridException",
 ]

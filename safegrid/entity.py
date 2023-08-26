@@ -1,4 +1,3 @@
-from hmac import new
 import inspect
 from copy import deepcopy
 from typing import (

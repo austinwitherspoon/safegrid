@@ -54,7 +54,7 @@ class ShotgunType:
     def name(self) -> str:
         return self.field_info.alias or self._name
 
-    if typing.TYPE_CHECKING:
+    if typing.TYPE_CHECKING:  # pragma: no cover
 
         @overload
         def __get__(self, instance: None, owner: Any) -> Self:
@@ -187,7 +187,7 @@ class ShotgunType:
 
 
 class UnknownFieldType(ShotgunType):
-    if typing.TYPE_CHECKING:
+    if typing.TYPE_CHECKING:  # pragma: no cover
 
         def is_(self, __value: _value_is) -> Filter[_value_is]:
             ...
@@ -306,7 +306,7 @@ TextCastTo = TypeVar("TextCastTo", default=str)
 class TextField(ShotgunType, Generic[TextCastTo]):
     _output_type = str
 
-    if typing.TYPE_CHECKING:
+    if typing.TYPE_CHECKING:  # pragma: no cover
 
         @overload
         def __get__(self, instance: None, owner: Any) -> Self:
@@ -364,7 +364,7 @@ FloatCastTo = TypeVar("FloatCastTo", default=float)
 class FloatField(ShotgunType, Generic[FloatCastTo]):
     _output_type = float
 
-    if typing.TYPE_CHECKING:
+    if typing.TYPE_CHECKING:  # pragma: no cover
 
         @overload
         def __get__(self, instance: None, owner: Any) -> Self:
@@ -440,7 +440,7 @@ EntityCastTo = TypeVar("EntityCastTo", default=typing.List[GenericEntity])
 class MultiEntityField(ShotgunType, Generic[EntityCastTo]):
     _output_type = typing.List[GenericEntity]
 
-    if typing.TYPE_CHECKING:
+    if typing.TYPE_CHECKING:  # pragma: no cover  # pragma: no cover
 
         @overload
         def __get__(self, instance: None, owner: Any) -> Self:
@@ -520,7 +520,7 @@ NumberCastTo = TypeVar("NumberCastTo", default=int)
 class NumberField(ShotgunType, Generic[NumberCastTo]):
     _output_type = int
 
-    if typing.TYPE_CHECKING:
+    if typing.TYPE_CHECKING:  # pragma: no cover
 
         @overload
         def __get__(self, instance: None, owner: Any) -> Self:
@@ -585,7 +585,7 @@ CheckboxCastTo = TypeVar("CheckboxCastTo", default=bool)
 class CheckboxField(ShotgunType, Generic[CheckboxCastTo]):
     _output_type = bool
 
-    if typing.TYPE_CHECKING:
+    if typing.TYPE_CHECKING:  # pragma: no cover
 
         @overload
         def __get__(self, instance: None, owner: Any) -> Self:
@@ -630,7 +630,7 @@ DateCastTo = TypeVar("DateCastTo", default=date)
 class DateField(ShotgunType, Generic[DateCastTo]):
     _output_type = date
 
-    if typing.TYPE_CHECKING:
+    if typing.TYPE_CHECKING:  # pragma: no cover
 
         @overload
         def __get__(self, instance: None, owner: Any) -> Self:
@@ -726,7 +726,7 @@ DateTimeCastTo = TypeVar("DateTimeCastTo", default=datetime)
 class DateTimeField(ShotgunType, Generic[DateTimeCastTo]):
     _output_type = datetime
 
-    if typing.TYPE_CHECKING:
+    if typing.TYPE_CHECKING:  # pragma: no cover
 
         @overload
         def __get__(self, instance: None, owner: Any) -> Self:
@@ -822,7 +822,7 @@ DurationCastTo = TypeVar("DurationCastTo", default=timedelta)
 class DurationField(ShotgunType, Generic[DurationCastTo]):
     _output_type = timedelta
 
-    if typing.TYPE_CHECKING:
+    if typing.TYPE_CHECKING:  # pragma: no cover
 
         @overload
         def __get__(self, instance: None, owner: Any) -> Self:
@@ -897,7 +897,7 @@ EntityCastTo = TypeVar("EntityCastTo", default=GenericEntity)
 class EntityField(ShotgunType, Generic[EntityCastTo]):
     _output_type = GenericEntity
 
-    if typing.TYPE_CHECKING:
+    if typing.TYPE_CHECKING:  # pragma: no cover
 
         @overload
         def __get__(self, instance: None, owner: Any) -> Self:
@@ -985,7 +985,7 @@ ListCastTo = TypeVar("ListCastTo", default=str)
 class ListField(ShotgunType, Generic[ListCastTo]):
     _output_type = str
 
-    if typing.TYPE_CHECKING:
+    if typing.TYPE_CHECKING:  # pragma: no cover
 
         @overload
         def __get__(self, instance: None, owner: Any) -> Self:
@@ -1031,7 +1031,7 @@ SerializableCastTo = TypeVar("SerializableCastTo", default=dict)
 class SerializableField(ShotgunType, Generic[SerializableCastTo]):
     _output_type = dict
 
-    if typing.TYPE_CHECKING:
+    if typing.TYPE_CHECKING:  # pragma: no cover
 
         @overload
         def __get__(self, instance: None, owner: Any) -> Self:
@@ -1062,7 +1062,7 @@ TagListCastTo = TypeVar("TagListCastTo", default=ListField[str])
 class TagListField(ShotgunType, Generic[TagListCastTo]):
     _output_type = list
 
-    if typing.TYPE_CHECKING:
+    if typing.TYPE_CHECKING:  # pragma: no cover
 
         @overload
         def __get__(self, instance: None, owner: Any) -> Self:

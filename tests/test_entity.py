@@ -6,30 +6,9 @@ from shotgun_api3.lib import mockgun
 import pytest
 import safegrid.exceptions
 from safegrid.fields import (
-    UnknownFieldType,
     TextField,
-    FloatField,
     MultiEntityField,
-    NumberField,
-    AddressingField,
-    CheckboxField,
-    ColorField,
-    CurrencyField,
-    DateField,
-    DateTimeField,
-    DurationField,
     EntityField,
-    FootageField,
-    ImageField,
-    ListField,
-    PasswordField,
-    PercentField,
-    SerializableField,
-    StatusListField,
-    SummaryField,
-    TagListField,
-    TimecodeField,
-    UrlField,
 )
 
 
@@ -99,7 +78,7 @@ def test_filtering(sg: mockgun.Shotgun):
 
     # all of the above
     versions = Version.find(
-        Version.entity.type_is("Shot"),
+        Version.entity.type_is("Shot"),  # type: ignore
         Version.code.contains("bunny"),
         filters=[["entity", "is_not", None]],
     )
@@ -152,7 +131,7 @@ def test_nested_models(sg: mockgun.Shotgun):
         _sg = sg
         type = "Project"
         name: TextField
-        users: MultiEntityField[List["User"]]
+        users: MultiEntityField[List["User"]]  # type: ignore
 
     class User(safegrid.BaseEntity):
         _sg = sg
@@ -171,17 +150,20 @@ def test_nested_models(sg: mockgun.Shotgun):
             target = target.users[0]
 
 
-def test_bad_input():
+def test_bad_input(sg: mockgun.Shotgun):
     class Version(safegrid.BaseEntity):
+        _sg = sg
         type = "Version"
         code: TextField
 
     with pytest.raises(pydantic.ValidationError):
-        Version(code="test", type="Shot")  # Invalid type, expected "Version"!
+        Version(
+            code="test", type="Shot"  # type: ignore
+        )  # Invalid type, expected "Version"!
 
     with pytest.raises(pydantic.ValidationError):
         # Validation error for type of code
-        Version(code=1)
+        Version(code=1)  # type: ignore
 
     with pytest.raises(safegrid.SafegridException):
         # Class must have type attribute defined!

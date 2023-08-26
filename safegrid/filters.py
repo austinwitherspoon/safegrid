@@ -110,7 +110,7 @@ class Filter(Generic[FilterValue]):
         else:
             return [self.field, self.operator.value, self.value]
 
-    if TYPE_CHECKING:
+    if TYPE_CHECKING:  # pragma: no cover
 
         @overload
         def __new__(
@@ -316,14 +316,7 @@ class Filter(Generic[FilterValue]):
         if isinstance(other, Filter):
             return FilterGroup(FilterGroupOperator.All, [self, other])
         elif isinstance(other, FilterGroup):
-            if other.operator == FilterGroupOperator.All:
-                return FilterGroup(FilterGroupOperator.All, [self, *other.filters])
-            elif other.operator == FilterGroupOperator.Any:
-                return FilterGroup(FilterGroupOperator.All, [self, other])
-            else:
-                raise ValueError(
-                    f"Cannot add FilterGroup with operator {other.operator} to Filter"
-                )
+            return other & self
         else:
             raise TypeError(f"Cannot add {type(other)} to Filter")
 
@@ -331,14 +324,7 @@ class Filter(Generic[FilterValue]):
         if isinstance(other, Filter):
             return FilterGroup(FilterGroupOperator.Any, [self, other])
         elif isinstance(other, FilterGroup):
-            if other.operator == FilterGroupOperator.All:
-                return FilterGroup(FilterGroupOperator.Any, [self, other])
-            elif other.operator == FilterGroupOperator.Any:
-                return FilterGroup(FilterGroupOperator.Any, [self, *other.filters])
-            else:
-                raise ValueError(
-                    f"Cannot add FilterGroup with operator {other.operator} to Filter"
-                )
+            return other | self
         else:
             raise TypeError(f"Cannot add {type(other)} to Filter")
 
@@ -373,21 +359,12 @@ class FilterGroup:
                 return FilterGroup(FilterGroupOperator.All, [*self.filters, other])
             elif self.operator == FilterGroupOperator.Any:
                 return FilterGroup(FilterGroupOperator.All, [self, other])
-            else:
+            else:  # pragma: no cover
                 raise ValueError(
-                    f"Cannot add Filter with operator {other.operator} to FilterGroup"
+                    f"Cannot add Filter with operator {other.operator} to group"
                 )
         elif isinstance(other, FilterGroup):
-            if other.operator == FilterGroupOperator.All:
-                return FilterGroup(
-                    FilterGroupOperator.All, [*self.filters, *other.filters]
-                )
-            elif other.operator == FilterGroupOperator.Any:
-                return FilterGroup(FilterGroupOperator.All, [*self.filters, other])
-            else:
-                raise ValueError(
-                    f"Cannot add FilterGroup with operator {other.operator} to group"
-                )
+            return FilterGroup(FilterGroupOperator.All, [self, other])
         else:
             raise TypeError(f"Cannot add {type(other)} to FilterGroup")
 
@@ -397,21 +374,12 @@ class FilterGroup:
                 return FilterGroup(FilterGroupOperator.Any, [self, other])
             elif self.operator == FilterGroupOperator.Any:
                 return FilterGroup(FilterGroupOperator.Any, [*self.filters, other])
-            else:
+            else:  # pragma: no cover
                 raise ValueError(
                     f"Cannot add Filter with operator {other.operator} to FilterGroup"
                 )
         elif isinstance(other, FilterGroup):
-            if other.operator == FilterGroupOperator.All:
-                return FilterGroup(FilterGroupOperator.Any, [self, other])
-            elif other.operator == FilterGroupOperator.Any:
-                return FilterGroup(
-                    FilterGroupOperator.Any, [*self.filters, *other.filters]
-                )
-            else:
-                raise ValueError(
-                    f"Cannot add FilterGroup with operator {other.operator} to group"
-                )
+            return FilterGroup(FilterGroupOperator.Any, [self, other])
         else:
             raise TypeError(f"Cannot add {type(other)} to FilterGroup")
 

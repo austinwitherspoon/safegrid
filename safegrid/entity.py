@@ -1,4 +1,5 @@
 import inspect
+import sys
 import types
 from copy import deepcopy
 from typing import (
@@ -13,6 +14,7 @@ from typing import (
     Type,
     Union,
 )
+import typing
 
 import pydantic
 import shotgun_api3
@@ -70,10 +72,16 @@ def swap_annotations(type_hint: Type) -> Tuple[Type, Optional[Type[ShotgunType]]
                 try:
                     new_type = origin[tuple(new_args)]  # type:ignore
                 except TypeError:
-                    if origin in [types.UnionType]:
-                        new_type = Union[tuple(new_args)]  # type:ignore
+                    if sys.version_info >= (3, 9):
+                        if origin in [types.UnionType]:
+                            new_type = Union[tuple(new_args)]  # type:ignore
+                        else:
+                            raise
                     else:
-                        raise
+                        if origin in [typing.Union]:
+                            new_type = Union[tuple(new_args)]
+                        else:
+                            raise
                 return new_type, sg_field
             else:
                 raise SafegridException(
@@ -107,8 +115,8 @@ class EntityMeta(type(pydantic.BaseModel)):
     def __new__(
         mcs,
         cls_name: str,
-        bases: tuple[type[Any], ...],
-        namespace: dict[str, Any],
+        bases: Tuple[Type[Any], ...],
+        namespace: Dict[str, Any],
         *args,
         **kwargs,
     ):

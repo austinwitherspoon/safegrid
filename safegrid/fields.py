@@ -2,7 +2,7 @@ from datetime import date, datetime, timedelta
 from typing_extensions import Literal, Self, TypeVar, TypedDict
 from pydantic import BaseModel
 from pydantic.fields import FieldInfo
-from typing import (
+from typing_extensions import (
     TYPE_CHECKING,
     Any,
     Generic,
